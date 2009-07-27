@@ -1,0 +1,79 @@
+= Pubsubhubbub4r
+
+Simple pubsubhubbub client lib for Ruby. API is Rails-friendly, not dependent.
+
+== Files
+
+  |-- README.rdoc
+  `-- lib
+      `-- pubsubhubbub4r
+          `-- client.rb
+
+== Example Rails controller
+
+  require 'pubsubhubbub4r/client'
+  class BasicPubsubhubbubController < ApplicationController
+    def notify
+      client = Pubsubhubbub4r::Client.new(Rails.cache, Rails.logger)
+      case params['hub.challenge'] && params['hub.mode']
+      when nil
+        # doc = Hpricot(request.body.read) # parse XML from "request.body.read"
+        # response.headers['X-Hub-On-Behalf-Of'] = 1 # optional subscriber count
+        render :nothing => true
+      when 'subscribe'
+        if reply = client.verify(params)
+          render :text => reply
+        else
+          render :nothing => true, :status => 404
+        end
+      when 'unsubscribe'
+        if reply = client.verify(params)
+          render :text => reply
+        else
+          render :nothing => true, :status => 404
+        end
+      end
+    end
+  end
+
+== Example script/console usage with BasicPubsubhubbubController
+
+Setup
+  require 'pubsubhubbub4r/client'
+  atom_url = "http://feedproxy.google.com/TechCrunch"
+  hub_url  = "http://pubsubhubbub.appspot.com"
+  callback_url = app.url_for(:only_path => false, :controller => 'basic_pubsubhubbub', :action => 'notify')
+  client   = Pubsubhubbub4r::Client.new(Rails.cache, Rails.logger)
+
+Subscribe
+  leased_seconds = client.subscribe(hub_url, atom_url, callback_url)
+  if leased_seconds
+    puts "Hub verified subscription until #{Time.now + leased_seconds}"
+  else
+    puts "Hub will asynchronously verify subscription at BasicPubsubhubbubController#notify"
+  end
+
+Unsubscribe
+  verified = client.unsubscribe(hub_url, atom_url, callback_url)
+  if verified
+    puts "Hub verified unsubscribe-request on the spot."
+  else
+    puts "Hub will asynchronously verify unsubscribe-request at BasicPubsubhubbubController#notify"
+  end
+
+== Example didn't work
+
+Make sure you've configured Rails.cache in your config/environments/development.rb or config/environments/production.rb; By default, memory cache is used, and data there cannot be shared between script/console and script/server. (Maglev?)
+
+e.g.
+  config.cache_store = :file_store
+
+== Further reading
+
+- http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.1.html
+- http://code.google.com/p/pubsubhubbub/
+- http://github.com/igrigorik/PubSubHubbub
+
+== License
+
+Copyright (c) 2009 Chew Choon Keat, released under the MIT license
