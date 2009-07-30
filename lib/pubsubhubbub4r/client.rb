@@ -47,7 +47,8 @@ module Pubsubhubbub4r
 
       def post(mode, hub_url, topic, callback_url, lease_seconds, ack_timeout_seconds)
         verify_token = SHA1.hexdigest("#{[mode, topic, callback_url, lease_seconds, rand(ack_timeout_seconds), Time.now.to_f].join('.')}")
-        self.cache.write(verification_cache_key(verify_token), verification_secret(mode, topic))
+        cache_key = verification_cache_key(verify_token)
+        self.cache.write(cache_key, verification_secret(mode, topic))
         uri = URI.parse(hub_url)
         request_headers = { 'User-Agent' => 'Pubsubhubbub4r::Client' }.merge(self.headers || {})
         request = Net::HTTP::Post.new(uri.request_uri, request_headers)
@@ -68,6 +69,7 @@ module Pubsubhubbub4r
         end
         case response && response.code.to_s
         when "204"
+          self.cache.delete(cache_key)
           self.logger.debug "#{mode} : verified" if self.logger
           lease_seconds
         when "202"

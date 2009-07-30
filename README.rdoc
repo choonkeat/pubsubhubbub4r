@@ -68,6 +68,12 @@ Make sure you've configured Rails.cache in your config/environments/development.
 e.g.
   config.cache_store = :file_store
 
+== Production practice
+
+You can "subscribe" and Hubs can "verify". But don't fully trust things to work after that. Continue
+to use polling for any feed until you get notified (at least ONCE) of new content from the hub. Sad
+but true.
+
 == Further reading
 
 - http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.1.html
