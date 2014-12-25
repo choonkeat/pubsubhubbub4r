@@ -2,6 +2,8 @@ begin
   require 'digest/sha1'
 rescue LoadError
   require 'sha1'
+  module Digest; end
+  Digest::SHA1 = SHA1 unless defined?(Digest::SHA1)
 end
 
 module Pubsubhubbub4r
@@ -50,7 +52,7 @@ module Pubsubhubbub4r
       end
 
       def post(mode, hub_url, topic, callback_url, lease_seconds, ack_timeout_seconds)
-        verify_token = SHA1.hexdigest("#{[mode, topic, callback_url, lease_seconds, rand(ack_timeout_seconds), Time.now.to_f].join('.')}")
+        verify_token = Digest::SHA1.hexdigest("#{[mode, topic, callback_url, lease_seconds, rand(ack_timeout_seconds), Time.now.to_f].join('.')}")
         cache_key = verification_cache_key(verify_token)
         self.cache.write(cache_key, verification_secret(mode, topic))
         uri = URI.parse(hub_url)
