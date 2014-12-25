@@ -1,4 +1,8 @@
-require 'sha1'
+begin
+  require 'digest/sha1'
+rescue LoadError
+  require 'sha1'
+end
 
 module Pubsubhubbub4r
   class Client
